@@ -9,6 +9,47 @@
 //   Board      : IPCB_Board;
    
 
+Function GetNetsForExport() : TStringList;
+Var
+	List : TStringList;
+Begin
+	List := TStringList.Create;
+	
+	List.Add('+5V');
+	List.Add('+3V3');
+	List.Add('+2V8');
+	List.Add('+2V5');
+	List.Add('+1V8');
+	List.Add('+1V2');
+	List.Add('VDD_MCU');
+	List.Add('VREF+');
+	List.Add('VBUS_HS');
+	List.Add('VBUS_FS');
+	List.Add('U5V_ST_LINK');
+	List.Add('EMU_5V');
+	List.Add('EMU_3V3');
+	List.Add('E5V');
+	Result := List
+End;
+
+Function NetInList(NetName, NetsToExport) : Boolean;
+Var
+	i            : Integer;
+
+Begin
+	//NetsToExport := GetNetsForExport();
+	Result := False;
+	
+	For i := 0 to NetsToExport.Count - 1 do
+		If NetName = NetsToExport[i] Then
+		Begin
+			Result := True;
+			Exit;
+		End;
+	
+End;
+   
+   
 Function Max(A, B) : Int;
 Begin
     If A > B Then
@@ -48,6 +89,7 @@ Var
     CenterY   : String;
     ItemsList : TStringList;
     ItemString : String;
+	NetsToExport : TStringList;
 
 Begin
     ItemCount       := 0;
@@ -57,6 +99,7 @@ Begin
     If Board = Nil Then Exit;
     
     ItemsList := TStringList.Create;
+	NetsToExport := GetNetsForExport();
 
     // retrieve the iterator
     Iterator        := Board.BoardIterator_Create;
@@ -68,7 +111,6 @@ Begin
     Item := Iterator.FirstPCBObject;
     While (Item <> Nil) Do
     Begin
-        Inc(ItemCount);
 		{
         If Item.Net <> Nil Then
 		Begin
@@ -83,24 +125,29 @@ Begin
 		If Item.Net <> Nil Then
 		Begin
             NetName := Item.Net.Name;
-			HoleSize := FloatToStr(CoordToMils(Item.HoleSize));
-        
-			If Item.ObjectId = eViaObject Then
+			If NetInList(NetName, NetsToExport) Then
 			Begin
-				PadSize := FloatToStr(CoordToMils(Item.Size));
-			End
-			Else If Item.ObjectId = ePadObject Then
-			Begin
-				PadSize := FloatToStr(CoordToMils(Max(Item.MidXSize, Item.MidYSize)));
+				Inc(ItemCount);
+			
+				HoleSize := FloatToStr(CoordToMils(Item.HoleSize));
+			
+				If Item.ObjectId = eViaObject Then
+				Begin
+					PadSize := FloatToStr(CoordToMils(Item.Size));
+				End
+				Else If Item.ObjectId = ePadObject Then
+				Begin
+					PadSize := FloatToStr(CoordToMils(Max(Item.MidXSize, Item.MidYSize)));
+				End;
+				
+				CenterX := FloatToStr(CoordToMils(Item.X - Board.XOrigin));
+				CenterY := FloatToStr(CoordToMils(Item.Y - Board.YOrigin));
+		
+				ItemString := NetName + ';' + HoleSize + ';' + PadSize + ';' + CenterX + ';' + CenterY;
+				//ShowMessage(ItemString);
+				
+				ItemsList.Add(ItemString);
 			End;
-			
-			CenterX := FloatToStr(CoordToMils(Item.X - Board.XOrigin));
-			CenterY := FloatToStr(CoordToMils(Item.Y - Board.YOrigin));
-	
-			ItemString := NetName + ';' + HoleSize + ';' + PadSize + ';' + CenterX + ';' + CenterY;
-			ShowMessage(ItemString);
-			
-			ItemsList.Add(ItemString);
 		End;
     
         Item := Iterator.NextPCBObject;
