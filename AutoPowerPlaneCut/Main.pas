@@ -21,14 +21,14 @@ Begin
 	List.Add('+2V5');
 	List.Add('+1V8');
 	List.Add('+1V2');
-	List.Add('VDD_MCU');
-	List.Add('VREF+');
-	List.Add('VBUS_HS');
-	List.Add('VBUS_FS');
-	List.Add('U5V_ST_LINK');
-	List.Add('EMU_5V');
-	List.Add('EMU_3V3');
-	List.Add('E5V');
+	//List.Add('VDD_MCU');
+	//List.Add('VREF+');
+	//List.Add('VBUS_HS');
+	//List.Add('VBUS_FS');
+	//List.Add('U5V_ST_LINK');
+	//List.Add('EMU_5V');
+	//List.Add('EMU_3V3');
+	//List.Add('E5V');
 	Result := List
 End;
 
