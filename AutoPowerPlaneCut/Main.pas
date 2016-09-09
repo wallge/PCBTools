@@ -11,42 +11,42 @@
 
 Function GetNetsForExport() : TStringList;
 Var
-	List : TStringList;
+    List : TStringList;
 Begin
-	List := TStringList.Create;
-	
-	List.Add('+5V');
-	List.Add('+3V3');
-	List.Add('+2V8');
-	List.Add('+2V5');
-	List.Add('+1V8');
-	List.Add('+1V2');
-	//List.Add('VDD_MCU');
-	//List.Add('VREF+');
-	//List.Add('VBUS_HS');
-	//List.Add('VBUS_FS');
-	//List.Add('U5V_ST_LINK');
-	//List.Add('EMU_5V');
-	//List.Add('EMU_3V3');
-	//List.Add('E5V');
-	Result := List
+    List := TStringList.Create;
+    
+    List.Add('SGND');
+    List.Add('VOUT_REG');
+    List.Add('VOUT_SENSOR');
+    List.Add('VDD_3.3');
+    //List.Add('+1V8');
+    //List.Add('+1V2');
+    //List.Add('VDD_MCU');
+    //List.Add('VREF+');
+    //List.Add('VBUS_HS');             
+    //List.Add('VBUS_FS');
+    //List.Add('U5V_ST_LINK');
+    //List.Add('EMU_5V');
+    //List.Add('EMU_3V3');
+    //List.Add('E5V');
+    Result := List
 End;
 
 Function NetInList(NetName, NetsToExport) : Boolean;
 Var
-	i            : Integer;
+    i            : Integer;
 
 Begin
-	//NetsToExport := GetNetsForExport();
-	Result := False;
-	
-	For i := 0 to NetsToExport.Count - 1 do
-		If NetName = NetsToExport[i] Then
-		Begin
-			Result := True;
-			Exit;
-		End;
-	
+    //NetsToExport := GetNetsForExport();
+    Result := False;
+    
+    For i := 0 to NetsToExport.Count - 1 do
+        If NetName = NetsToExport[i] Then
+        Begin
+            Result := True;
+            Exit;
+        End;
+    
 End;
    
    
@@ -89,7 +89,7 @@ Var
     CenterY   : String;
     ItemsList : TStringList;
     ItemString : String;
-	NetsToExport : TStringList;
+    NetsToExport : TStringList;
 
 Begin
     ItemCount       := 0;
@@ -99,7 +99,7 @@ Begin
     If Board = Nil Then Exit;
     
     ItemsList := TStringList.Create;
-	NetsToExport := GetNetsForExport();
+    NetsToExport := GetNetsForExport();
 
     // retrieve the iterator
     Iterator        := Board.BoardIterator_Create;
@@ -111,44 +111,44 @@ Begin
     Item := Iterator.FirstPCBObject;
     While (Item <> Nil) Do
     Begin
-		{
+        {
         If Item.Net <> Nil Then
-		Begin
+        Begin
             NetName := Item.Net.Name;
-		End
+        End
         Else
-		Begin
+        Begin
             NetName := 'No Net';
-		End;
-		}
-		
-		If Item.Net <> Nil Then
-		Begin
+        End;
+        }
+        
+        If Item.Net <> Nil Then
+        Begin
             NetName := Item.Net.Name;
-			If NetInList(NetName, NetsToExport) Then
-			Begin
-				Inc(ItemCount);
-			
-				HoleSize := FloatToStr(CoordToMils(Item.HoleSize));
-			
-				If Item.ObjectId = eViaObject Then
-				Begin
-					PadSize := FloatToStr(CoordToMils(Item.Size));
-				End
-				Else If Item.ObjectId = ePadObject Then
-				Begin
-					PadSize := FloatToStr(CoordToMils(Max(Item.MidXSize, Item.MidYSize)));
-				End;
-				
-				CenterX := FloatToStr(CoordToMils(Item.X - Board.XOrigin));
-				CenterY := FloatToStr(CoordToMils(Item.Y - Board.YOrigin));
-		
-				ItemString := NetName + ';' + HoleSize + ';' + PadSize + ';' + CenterX + ';' + CenterY;
-				//ShowMessage(ItemString);
-				
-				ItemsList.Add(ItemString);
-			End;
-		End;
+            If NetInList(NetName, NetsToExport) Then
+            Begin
+                Inc(ItemCount);
+            
+                HoleSize := FloatToStr(CoordToMils(Item.HoleSize));
+            
+                If Item.ObjectId = eViaObject Then
+                Begin
+                    PadSize := FloatToStr(CoordToMils(Item.Size));
+                End
+                Else If Item.ObjectId = ePadObject Then
+                Begin
+                    PadSize := FloatToStr(CoordToMils(Max(Item.MidXSize, Item.MidYSize)));
+                End;
+                
+                CenterX := FloatToStr(CoordToMils(Item.X - Board.XOrigin));
+                CenterY := FloatToStr(CoordToMils(Item.Y - Board.YOrigin));
+        
+                ItemString := NetName + ';' + HoleSize + ';' + PadSize + ';' + CenterX + ';' + CenterY;
+                //ShowMessage(ItemString);
+                
+                ItemsList.Add(ItemString);
+            End;
+        End;
     
         Item := Iterator.NextPCBObject;
     End;

@@ -155,18 +155,56 @@ def voronoi_finite_polygons_2d(vor, radius=None):
 
 # compute Voronoi tesselation
 vor = Voronoi(points)
+#print vor.points
+#print vor.vertices
+
+#output = open('Vertices.txt', 'w')
+#for region in vor.regions:
+#    for i in range(0, len(region)-1):
+#        point0 = vor.vertices[i]
+#        point1 = vor.vertices[i+1]
+#        #print i, point0, point1
+#        output.write(str(point0[0]) + ' ' + str(point0[1]) + ' ' + str(point1[0]) + ' ' + str(point1[1]) + '\n')
+#
+#output.close()
+
+
+
+
 
 # plot
 regions, vertices = voronoi_finite_polygons_2d(vor)
 #print "--"
 #print regions
 #print "--"
+#print len(vertices)
+#print "--"
 #print vertices
 
+
+
+#output = open('Vertices.txt', 'w')
+#for region in vor.regions:
+#    for i in range(0, len(region)-1):
+#        point0 = vor.vertices[i]
+#        point1 = vor.vertices[i+1]
+#        #print i, point0, point1
+#        output.write(str(point0[0]) + ' ' + str(point0[1]) + ' ' + str(point1[0]) + ' ' + str(point1[1]) + '\n')
+#
+#output.close()
+
+output = open('Vertices.txt', 'w')
 # colorize
 for region in regions:
     polygon = vertices[region]
+    print 'polygon:', polygon
+    for vertex in polygon:
+        output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
+    output.write('\n')
+
     plt.fill(*zip(*polygon), alpha=0.4)
+
+output.close()
 
 #print type(points), type(points[0]), type(points[0][0])
 #print points[:][0]

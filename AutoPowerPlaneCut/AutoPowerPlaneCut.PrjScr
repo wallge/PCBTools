@@ -55,14 +55,31 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=
 
+[Document2]
+DocumentPath=Import_Voronoi.pas
+AnnotationEnabled=1
+AnnotateStartValue=1
+AnnotationIndexControlEnabled=0
+AnnotateSuffix=
+AnnotateScope=All
+AnnotateOrder=-1
+DoLibraryUpdate=1
+DoDatabaseUpdate=1
+ClassGenCCAutoEnabled=1
+ClassGenCCAutoRoomEnabled=1
+ClassGenNCAutoScope=None
+DItemRevisionGUID=
+GenerateClassCluster=0
+DocumentUniqueId=
+
 [Generic_ScriptingSystem]
 StartProcName=Main.pas>ProcessPCB
 
-[Generic_ScriptingSystemBreakpoints]
-ModuleName1=C:\Users\geoff\Documents\GitHub\PCBTools\AutoPowerPlaneCut\Main.pas
-Line1=52
-Condition1=
-Enabled1=True
+[Generic_Watches]
+0=X1
+1=Y1
+2=X2
+3=Y2
 
 [OutputGroup1]
 Name=Netlist Outputs
@@ -179,17 +196,57 @@ OutputName22=WireList Netlist
 OutputDocumentPath22=
 OutputVariantName22=
 OutputDefault22=0
+OutputType23=SIMetrixNetlist
+OutputName23=SIMetrix
+OutputDocumentPath23=
+OutputVariantName23=
+OutputDefault23=0
+OutputType24=SIMPLISNetlist
+OutputName24=SIMPLIS
+OutputDocumentPath24=
+OutputVariantName24=
+OutputDefault24=0
+OutputType25=WBSENetlistGeneration
+OutputName25=WEBENCH Simulation Engine
+OutputDocumentPath25=
+OutputVariantName25=
+OutputDefault25=0
+OutputType26=XSpiceNetlist
+OutputName26=XSpice Netlist
+OutputDocumentPath26=
+OutputVariantName26=
+OutputDefault26=0
 
 [OutputGroup2]
 Name=Simulator Outputs
 Description=
-TargetPrinter=Microsoft Print to PDF
+TargetPrinter=NPI142864 (HP Color LaserJet M553)
 PrinterOptions=Record=PrinterOptions|Copies=1|Duplex=1|TrueTypeOptions=3|Collate=1|PrintJobKind=1|PrintWhat=1
+OutputType1=AdvSimNetlist
+OutputName1=Mixed Sim
+OutputDocumentPath1=
+OutputVariantName1=
+OutputDefault1=0
+OutputType2=SIMetrixSimulation
+OutputName2=SIMetrix
+OutputDocumentPath2=
+OutputVariantName2=
+OutputDefault2=0
+OutputType3=SIMPLISSimulation
+OutputName3=SIMPLIS
+OutputDocumentPath3=
+OutputVariantName3=
+OutputDefault3=0
+OutputType4=WBSENetlist
+OutputName4=WEBENCH Simulation Engine
+OutputDocumentPath4=
+OutputVariantName4=
+OutputDefault4=0
 
 [OutputGroup3]
 Name=Documentation Outputs
 Description=
-TargetPrinter=Microsoft Print to PDF
+TargetPrinter=Virtual Printer
 PrinterOptions=Record=PrinterOptions|Copies=1|Duplex=1|TrueTypeOptions=3|Collate=1|PrintJobKind=1|PrintWhat=1
 OutputType1=Assembler Source Print
 OutputName1=Assembler Source Prints
@@ -998,4 +1055,7 @@ ComparisonOptions2=Kind=Component Class|MinPercent=75|MinMatch=3|ShowMatch=-1|Co
 ComparisonOptions3=Kind=Rule|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
 ComparisonOptions4=Kind=Differential Pair|MinPercent=50|MinMatch=1|ShowMatch=0|Confirm=0|UseName=0|InclAllRules=0
 ComparisonOptions5=Kind=Code Memory|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
+
+[SmartPDF]
+PageOptions=Record=PageOptions|CenterHorizontal=True|CenterVertical=True|PrintScale=1.00|XCorrection=1.00|YCorrection=1.00|PrintKind=1|BorderSize=5000000|LeftOffset=0|BottomOffset=0|Orientation=2|PaperLength=1000|PaperWidth=1000|Scale=100|PaperSource=7|PrintQuality=-3|MediaType=1|DitherType=10|PrintScaleMode=1|PaperKind=Letter|PaperIndex=1
 
