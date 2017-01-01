@@ -13,30 +13,90 @@ class Via:
         self.pad_size = pad_size
         self.coord = coord
 
-def parse_file(file_name):
-    f = open(file_name, 'r')
+
+class Coord:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class Track:
+    def __init__(self, coord0, coord1, width):
+        self.coord0 = coord0
+        self.coord1 = coord1
+        self.width = width
+
+class Arc:
+    def __init__(self, center, radius, angle1, angle2, width):
+        self.center = center
+        self.radius = radius
+        self.angle1 = angle1
+        self.width = width
+
+
+def get_vias(f):
     via_list = []
+    line_number = 0
 
     for line in f:
-        #split the current line by semicolons and remove the newline character
-        fields = line.replace('\n', '').split(';')
-        #print fields
-        net_name = fields[0]
-        hole_size = float(fields[1])
-        pad_size = float(fields[2])
-        coord = (float(fields[3]), float(fields[4]))
-        new_via = Via(net_name, hole_size, pad_size, coord)
-        #print vars(new_via)
-        via_list.append(new_via)
+        ##print line_number
+        if line == "***BOARD OUTLINE***\n":
+            break
+        else:
 
-    f.close()
+            # split the current line by semicolons and remove the newline character
+            fields = line.replace('\n', '').split(';')
+            # print fields
+
+            if len(fields) >= 5:
+                net_name = fields[0]
+                hole_size = float(fields[1])
+                pad_size = float(fields[2])
+                coord = (float(fields[3]), float(fields[4]))
+                new_via = Via(net_name, hole_size, pad_size, coord)
+                # print vars(new_via)
+                via_list.append(new_via)
+
+        line_number += 1
+
     return via_list
 
 
+def get_outline(f):
+    board_outline = []
+    found_outline = False
+
+    for line in f:
+        if line == "***BOARD OUTLINE***\n":
+            found_outline = True
+
+        if found_outline:
+            # split the current line by semicolons and remove the newline character
+            fields = line.replace('\n', '').split(';')
+            # print fields
+            if fields[0] == "TRACK":
+                new_track = Track(Coord(float(fields[1]), float(fields[2])), Coord(float(fields[3]), float(fields[4])), 0)
+                board_outline.append(new_track)
+
+            ##elif fields[0] == "ARC":
+
+
+    return board_outline
+
+
+def parse_file(file_name):
+    f = open(file_name, 'r')
+    via_list = get_vias(f)
+    f.seek(0)
+    pcb_outline = get_outline(f)
+
+    f.close()
+    return via_list, pcb_outline
 
 
 
-via_list = parse_file('ItemsList.txt')
+
+
+via_list, pcb_outline = parse_file('ItemsList.txt')
 
 points = []
 X = []
@@ -193,6 +253,7 @@ regions, vertices = voronoi_finite_polygons_2d(vor)
 #
 #output.close()
 
+#"""
 output = open('Vertices.txt', 'w')
 # colorize
 for region in regions:
@@ -206,6 +267,7 @@ for region in regions:
 
 output.close()
 
+#"""
 #print type(points), type(points[0]), type(points[0][0])
 #print points[:][0]
 #print points
@@ -216,9 +278,47 @@ output.close()
 #Y = points[1][:]
 #print len(X), len(Y)
 #print points[:][1]
+
+
+min_coord = Coord(100000, 100000)
+max_coord = Coord(-100000, -100000)
+
+def get_min_coord(min, c):
+    if min.x > c.x:
+        min.x = c.x
+
+    if min.y > c.y:
+        min.y = c.y
+
+def get_max_coord(max, c):
+    if max.x < c.x:
+        max.x = c.x
+
+    if max.y < c.y:
+        max.y = c.y
+
+
+for item in pcb_outline:
+    if item.__class__.__name__ == "Track":
+        plt.plot((item.coord0.x, item.coord1.x), (item.coord0.y, item.coord1.y), 'r-')
+        get_min_coord(min_coord, item.coord0)
+        get_min_coord(min_coord, item.coord1)
+        get_max_coord(max_coord, item.coord0)
+        get_max_coord(max_coord, item.coord1)
+
 plt.plot(X, Y, 'ko')
-plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
-plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
+##plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
+##plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
+
+
+width = max_coord.x - min_coord.x
+height = max_coord.y - min_coord.y
+
+plt.xlim(min_coord.x - 0.1*width, max_coord.x + 0.1*width)
+plt.ylim(min_coord.y - 0.1*height, max_coord.y + 0.1*height)
+
+#print min_coord.x, min_coord.y
+#print max_coord.x, max_coord.y
 
 plt.show()
 
