@@ -1,10 +1,8 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
-##import numpy as np
-##import matplotlib.pyplot as plt
-##from scipy.spatial import Voronoi
+
+import operator
 
 class Via:
     def __init__(self, net_name, hole_size, pad_size, coord):
@@ -92,41 +90,47 @@ def parse_file(file_name):
     f.close()
     return via_list, pcb_outline
 
+def find_pcb_outline_intersection(line_start_pt, line_dir, pcb_outline):
+    intersections = []
+    intersect_dist = []
+
+    for pcb_line in pcb_outline:
+        pcb_pt0 = np.array([pcb_line.coord0.x, pcb_line.coord0.y])
+        pcb_pt1 = np.array([pcb_line.coord1.x, pcb_line.coord1.y])
+        pcb_vec = pcb_pt1 - pcb_pt0
+        ##calculate the coefficients for the line representing the edge of the PCB
+        pcb_m = np.array([-pcb_vec[1], pcb_vec[0]])
+        ##calculate the offset for the pcb line
+        pcb_b = np.dot(pcb_m, pcb_pt0)
+        ##calculate the coefficients for the line we want to intersect with the PCB edge
+        line_m = np.array([-line_dir[1], line_dir[0]])
+        ##calculate the offset for the line
+        line_b = np.dot(line_m, line_start_pt)
+        ##now we solve the linear system
+        #Mx = b, for x
+        M = np.array([pcb_m,  line_m])
+        b = np.array([pcb_b,  line_b])
+        x = None
+        try:
+            x = np.linalg.solve(M, b)
+        except np.linalg.linalg.LinAlgError as err:
+            if 'Singular matrix' in err.message:
+                x = None
+            else:
+                raise
+
+        if x is not None:
+            intersections.append(x)
+            intersect_dist.append(np.linalg.norm(x-line_start_pt))
+
+    #find the minimum distance to the line_start_point to each of the computed intersections
+    index, value = min(enumerate(intersect_dist), key=operator.itemgetter(1))
+
+    return intersections[index]
 
 
 
-
-via_list, pcb_outline = parse_file('ItemsList.txt')
-
-points = []
-X = []
-Y = []
-for i in via_list:
-    #print type(i.coord), type(i.coord[0])
-    points.append([i.coord[0], i.coord[1]])
-    X.append(i.coord[0])
-    Y.append(i.coord[1])
-
-
-
-
-##if False:
-##    # compute Voronoi tesselation
-##    vor = Voronoi(points)
-##
-##    # plot
-##    voronoi_plot_2d(vor)
-##
-##    # colorize
-##    for region in vor.regions:
-##        if not -1 in region:
-##            polygon = [vor.vertices[i] for i in region]
-##            plt.fill(*zip(*polygon))
-##
-##    plt.show()
-
-
-def voronoi_finite_polygons_2d(vor, radius=None):
+def voronoi_finite_polygons_2d(vor, pcb_outline):
     """
     Reconstruct infinite voronoi regions in a 2D diagram to finite
     regions.
@@ -156,8 +160,8 @@ def voronoi_finite_polygons_2d(vor, radius=None):
     new_vertices = vor.vertices.tolist()
 
     center = vor.points.mean(axis=0)
-    if radius is None:
-        radius = vor.points.ptp().max()
+    ##if radius is None:
+    radius = vor.points.ptp().max()
 
     # Construct a map containing all ridges for a given point
     all_ridges = {}
@@ -175,6 +179,7 @@ def voronoi_finite_polygons_2d(vor, radius=None):
             continue
 
         # reconstruct a non-finite region
+        #print "p1 = ", p1, "all_ridges = ", all_ridges
         ridges = all_ridges[p1]
         new_region = [v for v in vertices if v >= 0]
 
@@ -193,6 +198,8 @@ def voronoi_finite_polygons_2d(vor, radius=None):
 
             midpoint = vor.points[[p1, p2]].mean(axis=0)
             direction = np.sign(np.dot(midpoint - center, n)) * n
+
+            #far_point = find_pcb_outline_intersection(vor.vertices[v2], direction, pcb_outline)
             far_point = vor.vertices[v2] + direction * radius
 
             new_region.append(len(new_vertices))
@@ -209,75 +216,88 @@ def voronoi_finite_polygons_2d(vor, radius=None):
 
     return new_regions, np.asarray(new_vertices)
 
-# make up data points
-#np.random.seed(1234)
-#points = np.random.rand(15, 2)
+
+
+
+via_list, pcb_outline = parse_file('ItemsList.txt')
+
+points = []
+X = []
+Y = []
+for i in via_list:
+    #print type(i.coord), type(i.coord[0])
+    points.append([i.coord[0], i.coord[1]])
+    X.append(i.coord[0])
+    Y.append(i.coord[1])
 
 # compute Voronoi tesselation
 vor = Voronoi(points)
-#print vor.points
-#print vor.vertices
+if False:
+    print "--Input Points--"
+    print vor.points
+    print "--Output Vertices--"
+    print vor.vertices
+    print "--Output Regions--"
+    print vor.regions
+    print "--Output Point Regions--"
+    print vor.point_region
+    print "--Output Ridge Points--"
+    print vor.ridge_points
+    print "--Output Ridge Vertices--"
+    print vor.ridge_vertices
 
-#output = open('Vertices.txt', 'w')
-#for region in vor.regions:
-#    for i in range(0, len(region)-1):
-#        point0 = vor.vertices[i]
-#        point1 = vor.vertices[i+1]
-#        #print i, point0, point1
-#        output.write(str(point0[0]) + ' ' + str(point0[1]) + ' ' + str(point1[0]) + ' ' + str(point1[1]) + '\n')
-#
-#output.close()
+if False:
+    for i in range(0, len(vor.points)):
+        print "*****************"
+        print i, vor.points[i]
+        j = vor.point_region[i]
+        #print j
+        #print vor.regions[j]
+        print "**region vertices**"
+        for k in vor.regions[j]:
+            if k == -1:
+                print "INF"
+            else:
+                print vor.vertices[k]
+        print "**ridge vertices**"
 
-
-
-
+        """
+        j =
+        for k in vor.regions[j]:
+            if k == -1:
+                print "INF"
+            else:
+                print vor.vertices[k]
+        """
 
 # plot
-regions, vertices = voronoi_finite_polygons_2d(vor)
-#print "--"
-#print regions
-#print "--"
-#print len(vertices)
-#print "--"
-#print vertices
+if False:
+    voronoi_plot_2d(vor)
+
+    # colorize
+    for region in vor.regions:
+        if not -1 in region:
+            polygon = [vor.vertices[i] for i in region]
+            plt.fill(*zip(*polygon))
+
+    plt.show()
 
 
+if True:
+# plot
+    regions, vertices = voronoi_finite_polygons_2d(vor, pcb_outline)
 
-#output = open('Vertices.txt', 'w')
-#for region in vor.regions:
-#    for i in range(0, len(region)-1):
-#        point0 = vor.vertices[i]
-#        point1 = vor.vertices[i+1]
-#        #print i, point0, point1
-#        output.write(str(point0[0]) + ' ' + str(point0[1]) + ' ' + str(point1[0]) + ' ' + str(point1[1]) + '\n')
-#
-#output.close()
+    output = open('Vertices.txt', 'w')
+    # colorize
+    for region in regions:
+        polygon = vertices[region]
+        for vertex in polygon:
+            output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
+        output.write('\n')
 
-#"""
-output = open('Vertices.txt', 'w')
-# colorize
-for region in regions:
-    polygon = vertices[region]
-    print 'polygon:', polygon
-    for vertex in polygon:
-        output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
-    output.write('\n')
+        plt.fill(*zip(*polygon), alpha=0.4)
 
-    plt.fill(*zip(*polygon), alpha=0.4)
-
-output.close()
-
-#"""
-#print type(points), type(points[0]), type(points[0][0])
-#print points[:][0]
-#print points
-#plt.plot(points, 'ko')
-#X = points[:]
-#print X
-#print points
-#Y = points[1][:]
-#print len(X), len(Y)
-#print points[:][1]
+    output.close()
 
 
 min_coord = Coord(100000, 100000)
