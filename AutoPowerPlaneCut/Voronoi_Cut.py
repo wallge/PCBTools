@@ -97,6 +97,7 @@ def find_pcb_outline_intersection(line_start_pt, line_dir, pcb_outline):
     for pcb_line in pcb_outline:
         pcb_pt0 = np.array([pcb_line.coord0.x, pcb_line.coord0.y])
         pcb_pt1 = np.array([pcb_line.coord1.x, pcb_line.coord1.y])
+        #compute the vector connecting the two PCB points
         pcb_vec = pcb_pt1 - pcb_pt0
         ##calculate the coefficients for the line representing the edge of the PCB
         pcb_m = np.array([-pcb_vec[1], pcb_vec[0]])
@@ -118,14 +119,17 @@ def find_pcb_outline_intersection(line_start_pt, line_dir, pcb_outline):
                 x = None
             else:
                 raise
-
+        #if the intersection is valid
         if x is not None:
+            #append it to our list of intersections
             intersections.append(x)
+            #and compute the distance of the intersection to the starting  of the vector
+            #we are trying to find the intersect for
             intersect_dist.append(np.linalg.norm(x-line_start_pt))
 
     #find the minimum distance to the line_start_point to each of the computed intersections
     index, value = min(enumerate(intersect_dist), key=operator.itemgetter(1))
-
+    #return the closest one (this corresponds to the nearest PCB edge)
     return intersections[index]
 
 
@@ -232,7 +236,7 @@ for i in via_list:
 
 # compute Voronoi tesselation
 vor = Voronoi(points)
-if False:
+if True:
     print "--Input Points--"
     print vor.points
     print "--Output Vertices--"
@@ -329,8 +333,6 @@ for item in pcb_outline:
 plt.plot(X, Y, 'ko')
 ##plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
 ##plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
-
-
 width = max_coord.x - min_coord.x
 height = max_coord.y - min_coord.y
 
