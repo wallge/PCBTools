@@ -36,14 +36,14 @@ def get_vias(f):
     line_number = 0
 
     for line in f:
-        ##print line_number
+        ##print( line_number
         if line == "***BOARD OUTLINE***\n":
             break
         else:
 
             # split the current line by semicolons and remove the newline character
             fields = line.replace('\n', '').split(';')
-            # print fields
+            # print( fields
 
             if len(fields) >= 5:
                 net_name = fields[0]
@@ -51,7 +51,7 @@ def get_vias(f):
                 pad_size = float(fields[2])
                 coord = (float(fields[3]), float(fields[4]))
                 new_via = Via(net_name, hole_size, pad_size, coord)
-                # print vars(new_via)
+                # print( vars(new_via)
                 via_list.append(new_via)
 
         line_number += 1
@@ -70,7 +70,7 @@ def get_outline(f):
         if found_outline:
             # split the current line by semicolons and remove the newline character
             fields = line.replace('\n', '').split(';')
-            # print fields
+            # print( fields
             if fields[0] == "TRACK":
                 new_track = Track(Coord(float(fields[1]), float(fields[2])), Coord(float(fields[3]), float(fields[4])), 0)
                 board_outline.append(new_track)
@@ -183,7 +183,7 @@ def voronoi_finite_polygons_2d(vor, pcb_outline):
             continue
 
         # reconstruct a non-finite region
-        #print "p1 = ", p1, "all_ridges = ", all_ridges
+        #print( "p1 = ", p1, "all_ridges = ", all_ridges
         ridges = all_ridges[p1]
         new_region = [v for v in vertices if v >= 0]
 
@@ -229,7 +229,7 @@ points = []
 X = []
 Y = []
 for i in via_list:
-    #print type(i.coord), type(i.coord[0])
+    #print( type(i.coord), type(i.coord[0]))
     points.append([i.coord[0], i.coord[1]])
     X.append(i.coord[0])
     Y.append(i.coord[1])
@@ -237,41 +237,41 @@ for i in via_list:
 # compute Voronoi tesselation
 vor = Voronoi(points)
 if True:
-    print "--Input Points--"
-    print vor.points
-    print "--Output Vertices--"
-    print vor.vertices
-    print "--Output Regions--"
-    print vor.regions
-    print "--Output Point Regions--"
-    print vor.point_region
-    print "--Output Ridge Points--"
-    print vor.ridge_points
-    print "--Output Ridge Vertices--"
-    print vor.ridge_vertices
+    print("--Input Points--")
+    print(vor.points)
+    print("--Output Vertices--")
+    print(vor.vertices)
+    print("--Output Regions--")
+    print(vor.regions)
+    print("--Output Point Regions--")
+    print(vor.point_region)
+    print("--Output Ridge Points--")
+    print(vor.ridge_points)
+    print("--Output Ridge Vertices--")
+    print(vor.ridge_vertices)
 
 if False:
     for i in range(0, len(vor.points)):
-        print "*****************"
-        print i, vor.points[i]
+        print("*****************")
+        print(i, vor.points[i])
         j = vor.point_region[i]
-        #print j
-        #print vor.regions[j]
-        print "**region vertices**"
+        #print( j
+        #print( vor.regions[j]
+        print("**region vertices**")
         for k in vor.regions[j]:
             if k == -1:
-                print "INF"
+                print("INF")
             else:
-                print vor.vertices[k]
-        print "**ridge vertices**"
+                print(vor.vertices[k])
+        print("**ridge vertices**")
 
         """
         j =
         for k in vor.regions[j]:
             if k == -1:
-                print "INF"
+                print( "INF"
             else:
-                print vor.vertices[k]
+                print( vor.vertices[k]
         """
 
 # plot
@@ -339,8 +339,8 @@ height = max_coord.y - min_coord.y
 plt.xlim(min_coord.x - 0.1*width, max_coord.x + 0.1*width)
 plt.ylim(min_coord.y - 0.1*height, max_coord.y + 0.1*height)
 
-#print min_coord.x, min_coord.y
-#print max_coord.x, max_coord.y
+#print( min_coord.x, min_coord.y
+#print( max_coord.x, max_coord.y
 
 plt.show()
 
