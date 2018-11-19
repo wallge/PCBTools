@@ -221,85 +221,37 @@ def voronoi_finite_polygons_2d(vor, pcb_outline):
     return new_regions, np.asarray(new_vertices)
 
 
-
-
-via_list, pcb_outline = parse_file('ItemsList.txt')
+vias, pcb_outline = parse_file('ItemsList.txt')
 
 points = []
 X = []
 Y = []
-for i in via_list:
-    #print( type(i.coord), type(i.coord[0]))
-    points.append([i.coord[0], i.coord[1]])
-    X.append(i.coord[0])
-    Y.append(i.coord[1])
+color_lut = {}
+for via in vias:
+    points.append([via.coord[0], via.coord[1]])
+    X.append(via.coord[0])
+    Y.append(via.coord[1])
+
+    color = color_lut.get(via.net_name)
+    if color is None:
+        color_lut[via.net_name] = np.random.rand(3)
 
 # compute Voronoi tesselation
 vor = Voronoi(points)
-if True:
-    print("--Input Points--")
-    print(vor.points)
-    print("--Output Vertices--")
-    print(vor.vertices)
-    print("--Output Regions--")
-    print(vor.regions)
-    print("--Output Point Regions--")
-    print(vor.point_region)
-    print("--Output Ridge Points--")
-    print(vor.ridge_points)
-    print("--Output Ridge Vertices--")
-    print(vor.ridge_vertices)
-
-if False:
-    for i in range(0, len(vor.points)):
-        print("*****************")
-        print(i, vor.points[i])
-        j = vor.point_region[i]
-        #print( j
-        #print( vor.regions[j]
-        print("**region vertices**")
-        for k in vor.regions[j]:
-            if k == -1:
-                print("INF")
-            else:
-                print(vor.vertices[k])
-        print("**ridge vertices**")
-
-        """
-        j =
-        for k in vor.regions[j]:
-            if k == -1:
-                print( "INF"
-            else:
-                print( vor.vertices[k]
-        """
-
-# plot
-if False:
-    voronoi_plot_2d(vor)
-
-    # colorize
-    for region in vor.regions:
-        if not -1 in region:
-            polygon = [vor.vertices[i] for i in region]
-            plt.fill(*zip(*polygon))
-
-    plt.show()
-
 
 if True:
-# plot
     regions, vertices = voronoi_finite_polygons_2d(vor, pcb_outline)
-
     output = open('Vertices.txt', 'w')
     # colorize
-    for region in regions:
+    for i, region in enumerate(regions):
         polygon = vertices[region]
+        via = vias[i]
+        color = color_lut[via.net_name]
         for vertex in polygon:
             output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
         output.write('\n')
 
-        plt.fill(*zip(*polygon), alpha=0.4)
+        plt.fill(*zip(*polygon), c=color, alpha=0.4, )
 
     output.close()
 
@@ -307,19 +259,21 @@ if True:
 min_coord = Coord(100000, 100000)
 max_coord = Coord(-100000, -100000)
 
-def get_min_coord(min, c):
-    if min.x > c.x:
-        min.x = c.x
 
-    if min.y > c.y:
-        min.y = c.y
+def get_min_coord(_min, c):
+    if _min.x > c.x:
+        _min.x = c.x
 
-def get_max_coord(max, c):
-    if max.x < c.x:
-        max.x = c.x
+    if _min.y > c.y:
+        _min.y = c.y
 
-    if max.y < c.y:
-        max.y = c.y
+
+def get_max_coord(_max, c):
+    if _max.x < c.x:
+        _max.x = c.x
+
+    if _max.y < c.y:
+        _max.y = c.y
 
 
 for item in pcb_outline:
@@ -331,16 +285,12 @@ for item in pcb_outline:
         get_max_coord(max_coord, item.coord1)
 
 plt.plot(X, Y, 'ko')
-##plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
-##plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
+
 width = max_coord.x - min_coord.x
 height = max_coord.y - min_coord.y
 
 plt.xlim(min_coord.x - 0.1*width, max_coord.x + 0.1*width)
 plt.ylim(min_coord.y - 0.1*height, max_coord.y + 0.1*height)
-
-#print( min_coord.x, min_coord.y
-#print( max_coord.x, max_coord.y
 
 plt.show()
 
