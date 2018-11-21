@@ -7,14 +7,13 @@
 
 //Global Constants
 Const
-	InputFileName = 'C:\Users\admin\Documents\GitHub\PcbTools\PCBTools\AutoPowerPlaneCut\Vertices.txt';
-	TrackWidth = 15.0;
-	PlaneCutLayer = eInternalPlane2;
-	
+    TrackWidth = 15.0;
+    PlaneCutLayer = eInternalPlane3;
+    
 Var
-	Board     : IPCB_Board;
+    Board     : IPCB_Board;
     ItemCount : Integer;
-	
+
 Procedure CreateATrack(X1, Y1, X2, Y2, Width, Net, LayerID);
 Var
     Track       : IPCB_Track;
@@ -28,7 +27,7 @@ Begin
     Track.Y1       := MilsToCoord(Y1) + Board.YOrigin;
     Track.X2       := MilsToCoord(X2) + Board.XOrigin;
     Track.Y2       := MilsToCoord(Y2) + Board.YOrigin;
-    Board.AddPCBObject(Track); 
+    Board.AddPCBObject(Track);
     Track.Selected := True;
     PCBServer.SendMessageToRobots(Track.I_ObjectAddress, c_Broadcast, PCBM_EndModify, c_NoEventData);
     PCBServer.SendMessageToRobots(Board.I_ObjectAddress, c_Broadcast, PCBM_BoardRegisteration, Track.I_ObjectAddress);
@@ -50,27 +49,27 @@ End;
 
 Function Clamp(Input, Lower, Upper) : Float;
 Begin
-	If Input < Lower Then Result := Lower
-	Else if Input > Upper Then Result := Upper
-	Else Result := Input;
-		
+    If Input < Lower Then Result := Lower
+    Else if Input > Upper Then Result := Upper
+    Else Result := Input;
+        
 End;
-		
-Procedure AddCutsFromFile(Dummy);
+        
+Procedure AddCutsFromFile(FilePath);
 var
     InputFile  : TextFile;
     I          : Integer;
     Line       : String;
-	X1, Y1       : Float;
-	X2, Y2       : Float;
-	LineSeparated : TStrings;
-	
-	IndP0 : Integer;
-	IndP1 : Integer;
-	
+    X1, Y1       : Float;
+    X2, Y2       : Float;
+    LineSeparated : TStrings;
+    
+    IndP0 : Integer;
+    IndP1 : Integer;
+    
 Begin
    
-    AssignFile(InputFile, InputFileName);
+    AssignFile(InputFile, FilePath);
     Reset(InputFile);
 
     Try
@@ -79,21 +78,21 @@ Begin
             readln(InputFile, Line);
             If Not VarIsNull(Line) Then
             Begin
-				LineSeparated := Split(Line, ' ');
-				For I := 0 to (LineSeparated.Count/2 - 1) Do
-				Begin
-					IndP0 := 2*I;
-					IndP1 := 2*(I+1) mod LineSeparated.Count;
-					X1 := StrToFloat(LineSeparated[IndP0]);
-					Y1 := StrToFloat(LineSeparated[IndP0+1]);
-					X2 := StrToFloat(LineSeparated[IndP1]);
-					Y2 := StrToFloat(LineSeparated[IndP1+1]);
-					CreateATrack(X1, Y1, X2, Y2, TrackWidth, 0, PlaneCutLayer);
-				End;
-				LineSeparated.Free;
-				Inc(ItemCount);
-				//Break;
-				
+                LineSeparated := Split(Line, ' ');
+                For I := 0 to (LineSeparated.Count/2 - 1) Do
+                Begin
+                    IndP0 := 2*I;
+                    IndP1 := 2*(I+1) mod LineSeparated.Count;
+                    X1 := StrToFloat(LineSeparated[IndP0]);
+                    Y1 := StrToFloat(LineSeparated[IndP0+1]);
+                    X2 := StrToFloat(LineSeparated[IndP1]);
+                    Y2 := StrToFloat(LineSeparated[IndP1+1]);
+                    CreateATrack(X1, Y1, X2, Y2, TrackWidth, 0, PlaneCutLayer);
+                End;
+                LineSeparated.Free;
+                Inc(ItemCount);
+                //Break;
+                
             End
         end;
 
@@ -102,7 +101,7 @@ Begin
     End;
 End;
 
-Procedure ProcessPCB;
+Procedure ImportPlaneCuts(InFileName : String);
 Var
 
     Item      : IPCB_Primitive;
@@ -116,17 +115,23 @@ Var
     ItemsList : TStringList;
     ItemString : String;
     NetsToExport : TStringList;
-
+    WS      : IWorkspace;
+    Prj     : IProject;
+    FilePath      : WideString;
 Begin
     ItemCount       := 0;
+    WS  := GetWorkspace;
+    If WS = Nil Then Exit;
 
-    // Retrieve the current board
+    Prj := WS.DM_FocusedProject;
+    If Prj = Nil Then Exit;
+
     Board := PCBServer.GetCurrentPCBBoard;
     If Board = Nil Then Exit;
-	
-	AddCutsFromFile(0);
+
+    AddCutsFromFile(InFileName);
+
     
-	
 
     // Display the count result on a dialog.
     ShowMessage('Item Count = ' + IntToStr(ItemCount));
