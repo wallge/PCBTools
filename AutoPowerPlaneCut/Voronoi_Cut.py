@@ -235,22 +235,34 @@ for via in vias:
 # compute Voronoi tesselation
 vor = Voronoi(points)
 
-if True:
-    regions, vertices = voronoi_finite_polygons_2d(vor, pcb_outline)
-    output = open('Vertices.txt', 'w')
-    # colorize
-    for i, region in enumerate(regions):
-        poly_vertices = vertices[region]
-        polygon = Polygon(poly_vertices)
-        via = vias[i]
-        color = color_lut[via.net_name]
-        for vertex in poly_vertices:
-            output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
-        output.write('\n')
 
-        plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
+regions, vertices = voronoi_finite_polygons_2d(vor, pcb_outline)
+output = open('Vertices.txt', 'w')
+# colorize
 
-    output.close()
+merge_polys = {}
+
+for i, region in enumerate(regions):
+    poly_vertices = vertices[region]
+    polygon = Polygon(poly_vertices)
+    via = vias[i]
+    net_name = via.net_name
+
+    merge_poly = merge_polys.get(net_name)
+    if merge_poly is None:
+        merge_polys[net_name] = polygon
+    else:
+        merge_polys[net_name] = merge_poly.union(polygon)
+
+    color = color_lut[net_name]
+    for vertex in poly_vertices:
+        output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
+    output.write('\n')
+
+    #plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
+
+
+output.close()
 
 
 min_coord = [100000, 100000]
@@ -273,26 +285,43 @@ def get_max_coord(_max, c):
         _max[1] = c.y
 
 
+board_points = []
 for item in pcb_outline:
     if item.__class__.__name__ == "Track":
-        plt.plot((item.coord0.x, item.coord1.x), (item.coord0.y, item.coord1.y), 'r-')
+        #plt.plot((item.coord0.x, item.coord1.x), (item.coord0.y, item.coord1.y), 'r-')
+        board_points += [(item.coord0.x, item.coord0.y), (item.coord1.x, item.coord1.y)]
+        #get_min_coord(min_coord, item.coord0)
+        #get_min_coord(min_coord, item.coord1)
+        #get_max_coord(max_coord, item.coord0)
+        #get_max_coord(max_coord, item.coord1)
 
-        get_min_coord(min_coord, item.coord0)
-        get_min_coord(min_coord, item.coord1)
-        get_max_coord(max_coord, item.coord0)
-        get_max_coord(max_coord, item.coord1)
+
+board_outline = Polygon(board_points)
+vertices = list(board_outline.exterior.coords)
+plt.fill(*zip(*vertices), c="red", alpha=0.3, )
+#plt.plot(*zip(*vertices), 'r-')
 
 
+for key, val in merge_polys.items():
+    color = color_lut[key]
+    val = board_outline.intersection(val)
+    if isinstance(val, Polygon):
+        poly_vertices = list(val.exterior.coords)
+        plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
+    else:
+        for poly in val:
+            poly_vertices = list(poly.exterior.coords)
+            plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
 
-min_coord = Point(min_coord)
-max_coord = Point(max_coord)
-plt.plot(X, Y, 'ko')
+#min_coord = Point(min_coord)
+#max_coord = Point(max_coord)
+#plt.plot(X, Y, 'ko')
 
-width = max_coord.x - min_coord.x
-height = max_coord.y - min_coord.y
+#width = max_coord.x - min_coord.x
+#height = max_coord.y - min_coord.y
 
-plt.xlim(min_coord.x - 0.1*width, max_coord.x + 0.1*width)
-plt.ylim(min_coord.y - 0.1*height, max_coord.y + 0.1*height)
+#plt.xlim(min_coord.x - 0.1*width, max_coord.x + 0.1*width)
+#plt.ylim(min_coord.y - 0.1*height, max_coord.y + 0.1*height)
 
 plt.show()
 
