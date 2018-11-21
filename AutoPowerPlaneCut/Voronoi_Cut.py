@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
+from shapely.geometry import Point, Polygon
 
 import operator
 
@@ -10,12 +11,6 @@ class Via:
         self.hole_size = hole_size
         self.pad_size = pad_size
         self.coord = coord
-
-
-class Coord:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
 
 class Track:
     def __init__(self, coord0, coord1, width):
@@ -49,7 +44,7 @@ def get_vias(f):
                 net_name = fields[0]
                 hole_size = float(fields[1])
                 pad_size = float(fields[2])
-                coord = (float(fields[3]), float(fields[4]))
+                coord = Point(float(fields[3]), float(fields[4]))
                 new_via = Via(net_name, hole_size, pad_size, coord)
                 # print( vars(new_via)
                 via_list.append(new_via)
@@ -72,7 +67,7 @@ def get_outline(f):
             fields = line.replace('\n', '').split(';')
             # print( fields
             if fields[0] == "TRACK":
-                new_track = Track(Coord(float(fields[1]), float(fields[2])), Coord(float(fields[3]), float(fields[4])), 0)
+                new_track = Track(Point(float(fields[1]), float(fields[2])), Point(float(fields[3]), float(fields[4])), 0)
                 board_outline.append(new_track)
 
             ##elif fields[0] == "ARC":
@@ -228,9 +223,10 @@ X = []
 Y = []
 color_lut = {}
 for via in vias:
-    points.append([via.coord[0], via.coord[1]])
-    X.append(via.coord[0])
-    Y.append(via.coord[1])
+    points += via.coord.coords[:]
+
+    X.append(via.coord.x)
+    Y.append(via.coord.y)
 
     color = color_lut.get(via.net_name)
     if color is None:
@@ -244,46 +240,52 @@ if True:
     output = open('Vertices.txt', 'w')
     # colorize
     for i, region in enumerate(regions):
-        polygon = vertices[region]
+        poly_vertices = vertices[region]
+        polygon = Polygon(poly_vertices)
         via = vias[i]
         color = color_lut[via.net_name]
-        for vertex in polygon:
+        for vertex in poly_vertices:
             output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
         output.write('\n')
 
-        plt.fill(*zip(*polygon), c=color, alpha=0.4, )
+        plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
 
     output.close()
 
 
-min_coord = Coord(100000, 100000)
-max_coord = Coord(-100000, -100000)
+min_coord = [100000, 100000]
+max_coord = [-100000, -100000]
 
 
 def get_min_coord(_min, c):
-    if _min.x > c.x:
-        _min.x = c.x
+    if _min[0] > c.x:
+        _min[0] = c.x
 
-    if _min.y > c.y:
-        _min.y = c.y
+    if _min[1] > c.y:
+        _min[1] = c.y
 
 
 def get_max_coord(_max, c):
-    if _max.x < c.x:
-        _max.x = c.x
+    if _max[0] < c.x:
+        _max[0] = c.x
 
-    if _max.y < c.y:
-        _max.y = c.y
+    if _max[1] < c.y:
+        _max[1] = c.y
 
 
 for item in pcb_outline:
     if item.__class__.__name__ == "Track":
         plt.plot((item.coord0.x, item.coord1.x), (item.coord0.y, item.coord1.y), 'r-')
+
         get_min_coord(min_coord, item.coord0)
         get_min_coord(min_coord, item.coord1)
         get_max_coord(max_coord, item.coord0)
         get_max_coord(max_coord, item.coord1)
 
+
+
+min_coord = Point(min_coord)
+max_coord = Point(max_coord)
 plt.plot(X, Y, 'ko')
 
 width = max_coord.x - min_coord.x
