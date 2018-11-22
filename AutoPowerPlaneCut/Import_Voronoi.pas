@@ -7,7 +7,7 @@
 
 //Global Constants
 Const
-    TrackWidth = 15.0;
+    TrackWidth = 25.0;
     PlaneCutLayer = eInternalPlane3;
     
 Var

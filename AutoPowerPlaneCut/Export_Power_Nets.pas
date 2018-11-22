@@ -14,12 +14,30 @@ Var
     List : TStringList;
 Begin
     List := TStringList.Create;
+    {
     List.Add('VCC_3.3');
     List.Add('VCC_MCU_P3V3');
     List.Add('VIN');
     List.Add('VCC_SERVO1_OUT');
     List.Add('VCC_SERVO2_OUT');
     List.Add('VCC_SERVO3_OUT');
+    }
+    List.Add('FUSE_VIN');
+    List.Add('TX2_PWR');
+    List.Add('VCC_MCU_VDDANA');
+    List.Add('DCSUPPLY');
+    List.Add('FUSE_VOUT');	
+    List.Add('BCC_BLE');	
+    List.Add('CHARGER_VIN');	
+    List.Add('CHARGER_VOUT');
+    List.Add('GIMBAL_PWR');
+    List.Add('VIN_RAW');		
+    List.Add('CHG_OUT');
+    List.Add('DCSUM');	
+    List.Add('VCC_MCU_P3V3');
+    List.Add('VCC_3.3');	
+
+
     Result := List
 End;
 
