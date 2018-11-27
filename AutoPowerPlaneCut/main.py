@@ -10,38 +10,14 @@ loads, pcb_outline = voronoi_cut.parse_file('ItemsList0.txt')
 loads, points, color_lut = loads
 # compute Voronoi tesselation
 vor = Voronoi(points)
-
-regions, vertices = voronoi_cut.make_cells_finite(vor)
-merge_polys = {}
-
-for i, region in enumerate(regions):
-    poly_vertices = vertices[region]
-    polygon = Polygon(poly_vertices)
-    load = loads[i]
-    net_name = load.name
-
-    merge_poly = merge_polys.get(net_name)
-    if merge_poly is None:
-        merge_polys[net_name] = polygon
-    else:
-        merge_polys[net_name] = merge_poly.union(polygon)
-
-    color = color_lut[net_name]
+merged_polys = voronoi_cut.merge_voronoi_cells(loads, vor)
+plane_cuts = voronoi_cut.create_cuts(merged_polys, pcb_outline, color_lut)
 
 output = open('Vertices.txt', 'w')
-
-for key, val in merge_polys.items():
-    color = color_lut[key]
-    val = pcb_outline.intersection(val)
-    if isinstance(val, Polygon):
-        poly_vertices = list(val.exterior.coords)
-        voronoi_cut.save_poly(output, poly_vertices)
-        plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
-    else:
-        for poly in val:
-            poly_vertices = list(poly.exterior.coords)
-            voronoi_cut.save_poly(output, poly_vertices)
-            plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
+for cut in plane_cuts:
+    poly_vertices = list(cut.boundary.exterior.coords)
+    voronoi_cut.save_poly(output, poly_vertices)
+    plt.fill(*zip(*poly_vertices), c=cut.color, alpha=0.4, )
 
 output.close()
 

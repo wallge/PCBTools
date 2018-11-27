@@ -3,10 +3,18 @@ from scipy.spatial import Voronoi
 from shapely.geometry import Point, Polygon
 
 class LoadPoint:
-    def __init__(self, name, coord, color):
-        self.name = name
+    def __init__(self, net_name, coord, color):
+        self.net_name = net_name
         self.coord = coord
         self.color = color
+
+class PowerPlaneCut:
+    def __init__(self, net_name, boundary, color, layer_num=None):
+        self.net_name = net_name
+        self.boundary = boundary
+        self.color = color
+        self.layer_num = layer_num
+
 
 class Via:
     def __init__(self, net_name, hole_size, pad_size, coord):
@@ -197,3 +205,41 @@ def save_poly(out_file, poly_coords):
     for vertex in poly_coords:
         out_file.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
     out_file.write('\n')
+
+
+def merge_voronoi_cells(loads, voronoi):
+    regions, vertices = make_cells_finite(voronoi)
+    merge_polys = {}
+
+    for i, region in enumerate(regions):
+        poly_vertices = vertices[region]
+        polygon = Polygon(poly_vertices)
+        load = loads[i]
+        net_name = load.net_name
+
+        merge_poly = merge_polys.get(net_name)
+        if merge_poly is None:
+            merge_polys[net_name] = polygon
+        else:
+            merge_polys[net_name] = merge_poly.union(polygon)
+
+        #color = color_lut[net_name]
+    return merge_polys
+
+
+def create_cuts(polys_dict, pcb_outline, color_lut):
+    plane_cuts = []
+
+    for net_name, poly in polys_dict.items():
+        color = color_lut[net_name]
+        poly = pcb_outline.intersection(poly)
+
+        if isinstance(poly, Polygon):
+            plane_cut = PowerPlaneCut(net_name, poly, color)
+            plane_cuts.append(plane_cut)
+        else:
+            for p in poly:
+                plane_cut = PowerPlaneCut(net_name, p, color)
+                plane_cuts.append(plane_cut)
+
+    return plane_cuts
