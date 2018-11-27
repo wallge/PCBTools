@@ -243,3 +243,56 @@ def create_cuts(polys_dict, pcb_outline, color_lut):
                 plane_cuts.append(plane_cut)
 
     return plane_cuts
+
+
+class PowerPlaneAssignment:
+    def __init__(self, plane_cuts, adjacency, assignments, num_planes):
+        self.plane_cuts = plane_cuts
+        self.adjacency = adjacency
+        self.assignments = assignments
+        self.num_planes = num_planes
+        #create empty dict for each of the power plane layers
+        self.layer_dicts = num_planes * [{}]
+        #create a  list of assigned polygons for each layer
+        self.assigned = num_planes * [[]]
+        #create a list of unassigned polygons for each layer
+        self.unassigned = num_planes * [[]]
+
+        for idx, plane_cut in enumerate(plane_cuts):
+            #assign the layer number
+            net_name = plane_cut.net_name
+            layer_num = assignments[idx]
+            layer_dict = self.layer_dicts[layer_num]
+            cut_indices = layer_dict.get(net_name)
+            if cut_indices is None:
+                cut_indices = [idx]
+                layer_dict[net_name] = cut_indices
+            else:
+                layer_dict[net_name].append(idx)
+
+            #add this polygon to the list of vacancies on the other pcb layers
+            for l in self.num_planes:
+                if l == layer_num:
+                    self.assigned[l].append(idx)
+                else:
+                    self.unassigned[l].append(idx)
+
+    #trying to figure out how to do the assignments of the polygons
+    def evaluate(self):
+        #for each power layer in the board
+        for plane_idx in range(self.num_planes):
+            #get the indices of assigned cuts
+            assigned_idxs = self.assigned[plane_idx]
+            # and the indices of unassigned cuts
+            unassigned_idxs = self.unassigned[plane_idx]
+            while unassigned_idxs:
+                for assigned_idx in assigned_idxs:
+                    assigned_cut = self.plane_cuts[assigned_idx]
+                    adjacent_idxs = self.adjacency[assigned_idx]
+
+                    for adjacent_idx in adjacent_idxs:
+                        adjacent_cut = self.plane_cuts[adjacent_idx]
+
+
+
+
