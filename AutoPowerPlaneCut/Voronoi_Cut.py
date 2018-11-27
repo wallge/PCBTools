@@ -1,9 +1,12 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.spatial import Voronoi, voronoi_plot_2d
+from scipy.spatial import Voronoi
 from shapely.geometry import Point, Polygon
 
-import operator
+class LoadPoint:
+    def __init__(self, name, coord, color):
+        self.name = name
+        self.coord = coord
+        self.color = color
 
 class Via:
     def __init__(self, net_name, hole_size, pad_size, coord):
@@ -26,37 +29,40 @@ class Arc:
         self.width = width
 
 
-def get_vias(f):
-    via_list = []
-    line_number = 0
+def get_load_points(f):
+    loads = []
+    points = []
+    color_lut = {}
 
     for line in f:
-        ##print( line_number
         if line == "***BOARD OUTLINE***\n":
             break
         else:
 
             # split the current line by semicolons and remove the newline character
             fields = line.replace('\n', '').split(';')
-            # print( fields
-
             if len(fields) >= 5:
-                net_name = fields[0]
-                hole_size = float(fields[1])
-                pad_size = float(fields[2])
+                name = fields[0]
+                #hole_size = float(fields[1])
+                #pad_size = float(fields[2])
                 coord = Point(float(fields[3]), float(fields[4]))
-                new_via = Via(net_name, hole_size, pad_size, coord)
-                # print( vars(new_via)
-                via_list.append(new_via)
+                color = color_lut.get(name)
+                if color is None:
+                    color_lut[name] = np.random.rand(3)
 
-        line_number += 1
+                load = LoadPoint(name, coord, color)
+                loads.append(load)
+                #X.append(coord.x)
+                #Y.append(coord.y)
+                points += coord.coords[:]
 
-    return via_list
+    return loads, points, color_lut
 
 
 def get_outline(f):
-    board_outline = []
     found_outline = False
+
+    board_points = []
 
     for line in f:
         if line == "***BOARD OUTLINE***\n":
@@ -67,69 +73,25 @@ def get_outline(f):
             fields = line.replace('\n', '').split(';')
             # print( fields
             if fields[0] == "TRACK":
-                new_track = Track(Point(float(fields[1]), float(fields[2])), Point(float(fields[3]), float(fields[4])), 0)
-                board_outline.append(new_track)
+                board_points += [(float(fields[1]), float(fields[2])), (float(fields[3]), float(fields[4]))]
 
             ##elif fields[0] == "ARC":
 
+    board_outline = Polygon(board_points).buffer(0)
 
     return board_outline
 
 
 def parse_file(file_name):
     f = open(file_name, 'r')
-    via_list = get_vias(f)
+    loads = get_load_points(f)
     f.seek(0)
     pcb_outline = get_outline(f)
-
     f.close()
-    return via_list, pcb_outline
-
-def find_pcb_outline_intersection(line_start_pt, line_dir, pcb_outline):
-    intersections = []
-    intersect_dist = []
-
-    for pcb_line in pcb_outline:
-        pcb_pt0 = np.array([pcb_line.coord0.x, pcb_line.coord0.y])
-        pcb_pt1 = np.array([pcb_line.coord1.x, pcb_line.coord1.y])
-        #compute the vector connecting the two PCB points
-        pcb_vec = pcb_pt1 - pcb_pt0
-        ##calculate the coefficients for the line representing the edge of the PCB
-        pcb_m = np.array([-pcb_vec[1], pcb_vec[0]])
-        ##calculate the offset for the pcb line
-        pcb_b = np.dot(pcb_m, pcb_pt0)
-        ##calculate the coefficients for the line we want to intersect with the PCB edge
-        line_m = np.array([-line_dir[1], line_dir[0]])
-        ##calculate the offset for the line
-        line_b = np.dot(line_m, line_start_pt)
-        ##now we solve the linear system
-        #Mx = b, for x
-        M = np.array([pcb_m,  line_m])
-        b = np.array([pcb_b,  line_b])
-        x = None
-        try:
-            x = np.linalg.solve(M, b)
-        except np.linalg.linalg.LinAlgError as err:
-            if 'Singular matrix' in err.message:
-                x = None
-            else:
-                raise
-        #if the intersection is valid
-        if x is not None:
-            #append it to our list of intersections
-            intersections.append(x)
-            #and compute the distance of the intersection to the starting  of the vector
-            #we are trying to find the intersect for
-            intersect_dist.append(np.linalg.norm(x-line_start_pt))
-
-    #find the minimum distance to the line_start_point to each of the computed intersections
-    index, value = min(enumerate(intersect_dist), key=operator.itemgetter(1))
-    #return the closest one (this corresponds to the nearest PCB edge)
-    return intersections[index]
+    return loads, pcb_outline
 
 
-
-def voronoi_finite_polygons_2d(vor, pcb_outline):
+def make_cells_finite(vor):
     """
     Reconstruct infinite voronoi regions in a 2D diagram to finite
     regions.
@@ -190,7 +152,6 @@ def voronoi_finite_polygons_2d(vor, pcb_outline):
                 continue
 
             # Compute the missing endpoint of an infinite ridge
-
             t = vor.points[p2] - vor.points[p1] # tangent
             t /= np.linalg.norm(t)
             n = np.array([-t[1], t[0]])  # normal
@@ -217,50 +178,6 @@ def voronoi_finite_polygons_2d(vor, pcb_outline):
 
 
 
-vias, pcb_outline = parse_file('ItemsList.txt')
-
-points = []
-X = []
-Y = []
-color_lut = {}
-for via in vias:
-    points += via.coord.coords[:]
-
-    X.append(via.coord.x)
-    Y.append(via.coord.y)
-
-    color = color_lut.get(via.net_name)
-    if color is None:
-        color_lut[via.net_name] = np.random.rand(3)
-
-# compute Voronoi tesselation
-vor = Voronoi(points)
-
-
-regions, vertices = voronoi_finite_polygons_2d(vor, pcb_outline)
-merge_polys = {}
-
-for i, region in enumerate(regions):
-    poly_vertices = vertices[region]
-    polygon = Polygon(poly_vertices)
-    via = vias[i]
-    net_name = via.net_name
-
-    merge_poly = merge_polys.get(net_name)
-    if merge_poly is None:
-        merge_polys[net_name] = polygon
-    else:
-        merge_polys[net_name] = merge_poly.union(polygon)
-
-    color = color_lut[net_name]
-
-
-
-
-min_coord = [100000, 100000]
-max_coord = [-100000, -100000]
-
-
 def get_min_coord(_min, c):
     if _min[0] > c.x:
         _min[0] = c.x
@@ -276,41 +193,7 @@ def get_max_coord(_max, c):
     if _max[1] < c.y:
         _max[1] = c.y
 
-
-board_points = []
-for item in pcb_outline:
-    if item.__class__.__name__ == "Track":
-        board_points += [(item.coord0.x, item.coord0.y), (item.coord1.x, item.coord1.y)]
-
-
-board_outline = Polygon(board_points).buffer(0)
-vertices = list(board_outline.exterior.coords)
-plt.fill(*zip(*vertices), c="red", alpha=0.3, )
-
-output = open('Vertices.txt', 'w')
-
-def save_poly(poly_coords):
+def save_poly(out_file, poly_coords):
     for vertex in poly_coords:
-        output.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
-    output.write('\n')
-
-
-for key, val in merge_polys.items():
-    color = color_lut[key]
-    val = board_outline.intersection(val)
-    if isinstance(val, Polygon):
-        poly_vertices = list(val.exterior.coords)
-        save_poly(poly_vertices)
-        plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
-    else:
-        for poly in val:
-            poly_vertices = list(poly.exterior.coords)
-            save_poly(poly_vertices)
-            plt.fill(*zip(*poly_vertices), c=color, alpha=0.4, )
-
-output.close()
-
-plt.show()
-
-
-
+        out_file.write(str(round(vertex[0], 2)) + ' ' + str(round(vertex[1], 2)) + ' ')
+    out_file.write('\n')
