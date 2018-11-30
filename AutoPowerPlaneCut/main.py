@@ -105,9 +105,18 @@ for cut in plane_cuts0:
     poly_vertices = list(cut.boundary.exterior.coords)
     #voronoi_cut.save_poly(output, poly_vertices)
     plt.fill(*zip(*poly_vertices), c=cut.color, alpha=0.4, )
+    center = cut.boundary.representative_point()
+    plt.annotate(
+        cut.net_name,
+        xy=(center.x, center.y), xytext=(-20, 20),
+        textcoords='offset points', ha='right', va='bottom',
+        #bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+        arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
     X = []
     Y = []
+    last_item = None
     for load in loads_by_layer[0]:
+
         X.append(load.coord.x)
         Y.append(load.coord.y)
 
@@ -118,12 +127,22 @@ for cut in plane_cuts1:
     poly_vertices = list(cut.boundary.exterior.coords)
     #voronoi_cut.save_poly(output, poly_vertices)
     plt.fill(*zip(*poly_vertices), c=cut.color, alpha=0.4, )
+    center = cut.boundary.representative_point()
+    plt.annotate(
+        cut.net_name,
+        xy=(center.x, center.y), xytext=(-20, 20),
+        textcoords='offset points', ha='right', va='bottom',
+        # bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+        arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
     X = []
     Y = []
     for load in loads_by_layer[1]:
         X.append(load.coord.x)
         Y.append(load.coord.y)
     plt.plot(X, Y, 'ko')
+
+
+
 
     '''
     if isinstance(pcb_outline, Polygon):

@@ -8,6 +8,10 @@ class LoadPoint:
         self.coord = coord
         self.color = color
 
+
+    def distance(self, load_point):
+        return self.coord.distance(load_point.coord)
+
 class PowerPlaneCut:
     def __init__(self, net_name, boundary, color, layer_num=None):
         self.net_name = net_name
