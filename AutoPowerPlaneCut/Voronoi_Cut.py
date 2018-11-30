@@ -30,11 +30,37 @@ class Track:
         self.width = width
 
 class Arc:
-    def __init__(self, center, radius, angle1, angle2, width):
+    def __init__(self, center, radius, angle1, angle2):
         self.center = center
         self.radius = radius
         self.angle1 = angle1
-        self.width = width
+        self.angle2 = angle2
+        #self.width = width
+
+    #convert an arc into several line segments for the purpose of creating the PCB outline
+    def get_segment_points(self, segments=4):
+        #print(self.center, self.angle1, self.angle2)
+        # The coordinates of the arc
+        theta = np.radians(np.linspace(self.angle1, self.angle2, segments))
+        x = self.center.x + self.radius * np.cos(theta)
+        y = self.center.y + self.radius * np.sin(theta)
+        points = []
+        for p in zip(x, y):
+            points.append(p)
+        return points
+
+    #determine if we need to flip the order of the arc points
+    #and return the point list in the correct ordering
+    def order_points(self, last_board_point):
+        arc_points = self.get_segment_points()
+        last_board_point = np.array(last_board_point)
+        dist0 = np.linalg.norm(np.array(arc_points[0]) - last_board_point)
+        dist1 = np.linalg.norm(np.array(arc_points[-1]) - last_board_point)
+        if dist0 > dist1:
+            arc_points = list(reversed(arc_points))
+            print(arc_points)
+
+        return arc_points
 
 
 def get_load_points(f):
@@ -71,6 +97,7 @@ def get_outline(f):
     found_outline = False
 
     board_points = []
+    arc_list = []
 
     for line in f:
         if line == "***BOARD OUTLINE***\n":
@@ -82,8 +109,21 @@ def get_outline(f):
             # print( fields
             if fields[0] == "TRACK":
                 board_points += [(float(fields[1]), float(fields[2])), (float(fields[3]), float(fields[4]))]
+            elif fields[0] == "ARC":
+                center = Point((float(fields[1]), float(fields[2])))
+                radius = float(fields[3])
+                angle1 = float(fields[4])
+                angle2 = float(fields[5])
+                arc = Arc(center, radius, angle1, angle2)
+                #do not append and ARC as the first item in the list because we dont know what direction
+                #to traverse the arc
+                if board_points:
+                    board_points += arc.order_points(board_points[-1])
+                else:
+                    arc_list.append(arc)
 
-            ##elif fields[0] == "ARC":
+    for arc in arc_list:
+        board_points += arc.order_points(board_points[-1])
 
     board_outline = Polygon(board_points).buffer(0)
 

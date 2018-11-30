@@ -5,8 +5,7 @@ from shapely.geometry import Point, Polygon
 import itertools
 import voronoi_cut
 
-
-results, pcb_outline = voronoi_cut.parse_file('ItemsList1.txt')
+results, pcb_outline = voronoi_cut.parse_file('ItemsList.txt')
 loads, points, color_lut = results
 
 points_dict = {}
@@ -59,12 +58,10 @@ for ci, config in enumerate(configs):
 
     poly_count = len(plane_cuts0) + len(plane_cuts1)
 
-
-
     if poly_count <= min_poly_count:
         min_poly_count = poly_count
         min_config = config
-        print(poly_count, config)
+        #print(poly_count, config)
         net_count_dict = {}
         if 0 in config:
             for cut in plane_cuts0:
@@ -82,9 +79,9 @@ for ci, config in enumerate(configs):
                 else:
                     net_count_dict[cut.net_name] += 1
 
-        for key, val in net_count_dict.items():
-            if val > 1:
-                print(key, val)
+        #for key, val in net_count_dict.items():
+        #    if val > 1:
+        #        print(key, val)
 
 
 points_by_layer = [[], []]
@@ -126,8 +123,21 @@ for cut in plane_cuts1:
     for load in loads_by_layer[1]:
         X.append(load.coord.x)
         Y.append(load.coord.y)
+    plt.plot(X, Y, 'ko')
+
+    '''
+    if isinstance(pcb_outline, Polygon):
+        X, Y = pcb_outline.exterior.coords.xy
+    else:
+        X = []
+        Y = []
+        for p in pcb_outline:
+            x, y = p.exterior.coords.xy
+            X += x
+            Y += y
 
     plt.plot(X, Y, 'ko')
+    '''
 
 plt.show()
 #9 [0, 0, 0, 1, 1, 0, 1, 1]

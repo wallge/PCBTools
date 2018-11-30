@@ -116,7 +116,6 @@ Begin
         If PCB_Board.BoardOutline.Segments[I].Kind = ePolySegmentLine Then
         Begin
             // Current segment is a straight line; create a Track object.
-
             X := FloatToStr(CoordToMils(PCB_Board.BoardOutline.Segments[I].vx - PCB_Board.XOrigin));
             Y := FloatToStr(CoordToMils(PCB_Board.BoardOutline.Segments[I].vy - PCB_Board.YOrigin));
             ItemString := 'TRACK' + ';' + X + ';' + Y + ';';
@@ -135,6 +134,7 @@ Begin
             ItemString := ItemString + FloatToStr(CoordToMils(PCB_Board.BoardOutline.Segments[I].Radius)) + ';';
             ItemString := ItemString + FloatToStr(PCB_Board.BoardOutline.Segments[I].Angle1) + ';';
             ItemString := ItemString + FloatToStr(PCB_Board.BoardOutline.Segments[I].Angle2);
+            ItemsList.Add(ItemString);
         End;
     End;
     //PCBServer.PostProcess;
